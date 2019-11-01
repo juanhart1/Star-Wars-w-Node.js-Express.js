@@ -60,6 +60,17 @@ Postman enables you to test your backend code without a build-out frontend brows
 Express provides a handy piece of middleware which can be configured to easily serve static files.  No more wasting time configuring route handlers for every .css file you write!  See more details on how to configure this [here](https://expressjs.com/en/starter/static-files.html)
 
 1. [  ] In `server/server.js`, _use_ express.static to serve all static files from the `/client/assets` directory when requests are made to `/assets`.
+    * Upon using app.use() and passing a first arg of ‘/assets’ to specify the route I want to use the middleware on, I then pass a second argument of express.static() with the directory for where the static assets I’m looking to serve reside => express.static returns a function that serves as a piece of middleware
+    * I can use invoke express.static two ways:
+
+        ```
+        app.use('/assets', express.static('client/assets'));
+
+        app.use('/assets', express.static(__dirname + '/../client/assets'));
+        ```
+
+    * Best practice is to provide express.static() with an absolute file directory
+    * To serve multiple static asset directories, I would need to follow the above example and pass the other static directory to express.static()
 
 We won't be needing this just yet, but if you want to test to see if it works, open up Postman and send a `GET` request to `http://localhost:3000/assets/images/ackbar.jpg`. You should get a jpg file back in response.
 
@@ -67,14 +78,31 @@ We won't be needing this just yet, but if you want to test to see if it works, o
 
 #### Serving main React app
 1. [  ] Add a route handler that looks for a `GET` request to `/`
+    * Invoked the .get method on my ‘app’ instance of an Express application
 1. [  ] When a `GET` to `/` is received, respond with the `index.html` file inside the `/client` directory
+    * Used res.sendFile() to accomplish the transfer of a file living on the local machine to the client, wherever they are
+    * Use res.status() set the status code to reflect the status of processing the incoming HTTP request
+    * res.sendFile automatically updates the ‘Content-Type’ header based on the file being transferred file extension
+    ```
+    app.get('/', (req, res) => {
+        res.status(200).sendFile(path.join(__dirname, '../client/index.html'));
+    });
+    ```
 1. [  ] Test your route by going to `http://localhost:8080/` or sending a `GET` request to `http://localhost:3000/` (using Postman or some equivalent).  You should be served the basic React application! **Note:** Due to using webpack-dev-server (which you'll learn more about in a later unit), this may seem like an unnecessary step since you can already see your React app on `http://localhost:8080`. This is an important step though in any project you will eventually have a production environment for since you won't be using webpack-dev-server in production!
 
 #### Handle unknown routes
 Since we **always** want to respond to a request, even if we aren't going to _process_ it, Express gives us a handy way to 'catch' any unknown requests and respond in a generic way. Read through the express docs on how to setup a catch-all route for unhandled endpoint requests.  **Hint:** This route handler must be the **last** route handler you configure, otherwise it will 'catch' routes you mean to handle.
 1. [  ] After your last configured route handler, add another route handler.  This route handler should run regardless of request method, and should have only one anonymous middleware function.
+    * Used app.all() for route handling of all HTTP requests made to endpoints that aren’t setup/accounted for
 1. [  ] The anonymous middleware function for this route handler should simply send back a status code of 404, no other data necessary. **Hint:** check the express docs for a handy method you can use to send back just a status code.
+    * Used res.sendStatus() to send back the 404 status code upon hitting this route handler
 1. [  ] Test your new route.  Try sending a `GET` request on Postman to `http://localhost:3000/nothandlingthis`.  You should get back a simple 404 status code.  Alternatively, you can check the Network tab in Chrome dev tools to see the 404 status code coming back for our request to `/api/characters` since we are not yet handling this route on our server!
+
+    ```
+    app.all('*', (req, res) => {
+        res.sendStatus(404);
+    });
+    ```
 
 **A quick note on Chrome Dev Tools - Network Tab**
 The Network tab of the Chrome Dev Tools is a great place to get acquainted with outgoing requests and incoming responses.  You can see all of your browser's outgoing requests and if you click on a particular request you can see a lot of information such as:
@@ -100,14 +128,29 @@ The golden rule of middleware is **never close out a request in a reusable middl
 1. [  ] Add a `console.log` and log the `errorObj.log` property. This log property should contain any error information that we want to log, but that may be too sensitive to pass back to the client (i.e. detailed database errors)
 1. [  ] Finally, respond to the request using the `errorObj.status` property as the status code and the `errorObj.message` as the response data.  Pass this data back as json.
 
+    ```
+    function errorHandler (error, req, res, next){
+    const defaultErr = {
+        log: "Express error handler caught unknown middleware error.",
+        status: 400,
+        message: { err: "An error occurred." },
+    };
+    const errorObj = Object.assign(defaultErr, error);
+    res.status(errorObj.status).json(errorObj.message);
+    }
+    ```
+
 ### Starter data route
 We're already serving our React application, but it's looking pretty bare at the moment.  If we check the console we can see that we are sending a `GET` request to `/api` which we can assume is trying to fetch some starter data. Let's configure our backend to handle this request and serve up some data for us to work with!
 
 #### Configure api router and serve starter data
 Express enables us to modularize our routes so that when we have a lot of routes we can easily and thoughtfully organize them. You have been given a starting router file in `/server/routes/api.js`.  Let's setup this file so that we can serve our base data needed by our application.
 1. [  ] Look over the boilerplate code in `/server/routes/api.js`.  You should understand the following about this file:
-    1. [  ] What is `router` doing?
-    1. [  ] What is `fileController`? Feel free to open up the file being referenced and take a look around!
+    1. [x] What is `router` doing?
+        * `router` is an instance of Express' native Router constructor
+        * Gives us the ability to modularize our Express routing architecture by giving specific endpoints their own router
+    1. [x] What is `fileController`? Feel free to open up the file being referenced and take a look around!
+        * `fileController` is the middleware controller for fetching Star Wars information from the local `server/data/characters.json` file
 1. [  ] In the `/server/routes/api.js` file, add a new route handler for `GET` to `/`.
 1. [  ] This route handler should start by invoking the `fileController.getCharacters` middleware function.  Take a look at the `server/controllers/fileController.js` and get an understanding for what the `getCharacters` method is doing.
 1. [  ] The middleware function in the previous step should have added data to the `res.locals` object.  Now, as a final step in this route handler, add an anonymous function to respond to the request.  The response should include a status code of `200` as well as a json object with a key of `characters` and the value will be the data stored in `res.locals` by the `fileController.getCharacters` middleware function.  Hint: see [docs](http://expressjs.com/en/api.html#res.json) for details on sending a json response.
@@ -115,6 +158,19 @@ Express enables us to modularize our routes so that when we have a lot of routes
     1. [  ] In the `require routers` section at the top of the file, declare a constant to store the required api router we just updated (`/server/routes/api.js`).
     1. [  ] In the `define route handlers` section, configure your server to _use_ the api router you required in the previous step when any request method is received and the request url starts with `/api`.
 1. [  ] Test your new route handler by going to `localhost:8080/`. When the react app loads you should now see a lot more data displayed. Alternatively, you can send a `GET` request to `http://localhost:3000/api` and you should get back a JSON object with a `characters` property defined.
+
+```
+// server.js
+    const router = require('../server/routes/api.js');
+    app.use('/api', router);
+
+
+//api.js
+    router.get("/", fileController.getCharacters, (req, res, next) => {
+    const characters = { characters: res.locals.characters };
+    res.status(200).json(characters);
+    });
+```
 
 ### Save favorite characters
 You may notice that each character card in the React app has a star outline icon in the top right corner.  This icon denotes whether or not the user has selected the charater as one of their favorites.  A star outline notes that this character is _not_ a favorite and a filled star notes that this character _is_ a favorite.  Try clicking on a star outline for any character.  What happens? 🤔 Nothing! Because our server is not setup to handle adding / updating favorites.  We will now add this functionality so that our users can save their favs.

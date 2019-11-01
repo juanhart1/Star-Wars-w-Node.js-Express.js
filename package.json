@@ -5,7 +5,7 @@
   "main": "server/server.js",
   "scripts": {
     "start": "node server/server.js",
-    "dev": "NODE_ENV=development nodemon ./server/server.js & webpack-dev-server --open --hot --inline --progress --colors --watch --content-base ./",
+    "dev": "NODE_ENV=development nodemon ./server/server.js & webpack-dev-server --open --hot --inline --progress --colors --watch ",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "author": "samanthasalley",
@@ -50,6 +50,9 @@
     "webpack-hot-middleware": "^2.24.3"
   },
   "nodemonConfig": {
-    "ignore": ["server/data/*", "client/*"]
+    "ignore": [
+      "server/data/*",
+      "client/*"
+    ]
   }
 }
