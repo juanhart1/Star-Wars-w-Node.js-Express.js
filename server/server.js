@@ -8,11 +8,14 @@ const PORT = 3000;
 /**
  * require routers
  */
-const router = require('../server/routes/api.js');
+const apiRouter = require('../server/routes/api.js');
+const favsRouter = require('../server/routes/favs.js');
+const newCharRouter = require('../server/routes/characters.js');
 
 /**
  * handle parsing request body
  */
+app.use(bodyParser.json());
 
 /**
  * handle requests for static files
@@ -28,7 +31,9 @@ app.get('/', (req, res) => {
   res.status(200).sendFile(path.join(__dirname, '../client/index.html'));
 });
 
-app.use('/api', router);
+app.use('/api/characters', newCharRouter);
+app.use('/api/favs', favsRouter);
+app.use('/api', apiRouter);
 
 // route handler to respond with main app
 function errorHandler (error, req, res, next){
@@ -38,6 +43,7 @@ function errorHandler (error, req, res, next){
     message: { err: "An error occurred." },
   };
   const errorObj = Object.assign(defaultErr, error);
+  console.log(`Here is the errorObj's log property => ${errorObj.log}`);
   res.status(errorObj.status).json(errorObj.message);
 }
 

@@ -180,13 +180,22 @@ Now, our clients will be sending some data with their requests to our API via th
 1. [  ] In the `server/server.js` file, require in the body-parser library (it has already been installed as a node module since it was listed as a dependency in `package.json`).
 1. [  ] In the same file, under the `// configure body parser` section, setup a global middleware call to configure the body-parser library to parse the body as `json`.  **Hint:** see the Express docs on configuring global middlware.  **Hint 2:** see the body-parser docs for specific configurations on json.
 
+```
+    app.use(bodyParser.json());
+```
+
 #### Create fileController.getFavs
 First, we'll want to _get_ any current favorite selections so that we can add to them instead of overwriting them.
 
 1. [  ] In the `server/controllers/fileController.js` add a new method called `getFavs`.
+    * Successfully added method
 1. [  ] Use the built-in Node.js `fs` module to read all the data in the `favs.json` file. **Hint:** you will need to add an additional step to _parse_ the results of reading the file into JSON.
+    * Used fs.readFile to accomplish this
+    * Error handled in callback for fs.readFile
 1. [  ] Store all of the favorites on `res.locals.favs`.
+    * Stored parsed version of 'fileContents' as value for res.locals.favs property
 1. [  ] Move on to the next middleware function.
+    * Invoked 'next' to accomplish this
 1. [  ] If an error occurs, invoke the express global error handler with the following data:
     ```
     {
@@ -195,11 +204,40 @@ First, we'll want to _get_ any current favorite selections so that we can add to
     }
     ```
 
+    ```
+    // ADD MIDDLEWARE TO GET FAVORITE CHARACTERS HERE
+    fileController.getFavs = (req, res, next) => {
+    //use fs module to read the data living in the favs.json file
+    fs.readFile(path.join(__dirname, "./data/favs.json"), "utf8", (err, fileContents) => {
+        //if any errors occur, invoke the express global error handler
+        if (err) {
+        //create error object based on information provided in instructions
+        const errorObj = {
+            log: `fileController.getFavs: ${err.message}`,
+            message: {
+            err: 'fileController.getFavs: ERROR: Check server logs for details'
+            },
+        };
+        //invoke next w/ the erroObj we put together => use return keyword to end thread of execution
+        return next(errorObj);
+        } else {
+        //parse the JSON content from the file => JSON to JS
+        fileContents = JSON.parse(fileContents);
+        //store all observed favorites @ res.locals.favs
+        res.locals.favs = fileContents;
+        //then move on to next piece of middleware => use return keyword to end thread of execution
+        return next();
+        }
+    });
+    };
+    ```
 #### Create fileController.addFav
 Now that we have any existing favs, let's add a new one.
 
 1. [  ] In the `server/controllers/fileController.js` add a new method called `addFav`.
+    * Added method to fileController.js
 1. [  ] We expect that this piece of middleware will run after some other middleware which will get all our existing favorites data.  Let's be sure we have this data that we'll need to actually complete this function.  Verify that we have a property on the `res.locals` object called `favs` and that the value of this property is an object.
+    * Created conditional to check if res.locals has a property of 'favs' or if the value present at res.locals.favs is not an object
     1. [  ] If either of those checks are invalid, invoke the global Express error handler with the following error object:
     ```
     {
@@ -208,6 +246,7 @@ Now that we have any existing favs, let's add a new one.
     }
     ```
 1. [  ] Once the required data is validated, you will need to get the id of the character we want to add as a favorite. The route params used for the request must include a param known as `:id` (see [express routing parameters](https://expressjs.com/en/guide/routing.html#route-parameters) for how to access this data).  The value for this property is the character id we want to add.  Store this id in a variable.
+    * Did this by accessing the req.params objects at the current ID that was sent over in the "POST" request
 1. [  ] Check to see if there is already a property on the `res.locals.favs` object for the character id (no need to resave this character if it is already a favorite!)
     1. [  ] If the character id does already exist, just move to the _next_ piece of middleware.
 1. [  ] If the character id does not already exist on the object, add a new key/value pair to the favorites object where the key is the new favorited character id and the value is `true`.
