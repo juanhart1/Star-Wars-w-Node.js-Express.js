@@ -19,7 +19,6 @@ starWarsController.getMoreCharacters = (req, res, next) => {
     })
     //error handle for GET request
     .catch(error => {
-      console.log('Shit went wrong')
       //errorObj describes error that occurred
       const errorObj = {
         log: `starWarsController.getMoreCharacters: ${error.message}`,
@@ -46,8 +45,6 @@ starWarsController.populateCharacterPhotos = (req, res, next) => {
   //iterate over array of character objects
   newCharacters.forEach(character => {
     const { name } = character;
-    // console.log(`Here is the current character => ${JSON.stringify(character)}`);
-    console.log(name);
     //at each iteration, we will add a property to the character object named 'photo' and assign it the value returned from invoking convertToPhotoUrl w/ the current character's name
     character["photo"] = convertToPhotoUrl(name);
   });
@@ -59,7 +56,6 @@ starWarsController.populateCharacterPhotos = (req, res, next) => {
 starWarsController.validateRequestCharacter = (req, res, next) => {
   const { character } = req.body;
   const { homeworld, films } = req.body.character;
-  console.log(homeworld, films);
   //confirm that request body contains properties named character, homeworld, and films
   if (character && homeworld && films) {
     //if it does, move to the next piece of middleware
@@ -80,7 +76,6 @@ starWarsController.getHomeWorld = (req, res, next) => {
   fetch(homeworld)
     .then(homeworldJSON => homeworldJSON.json())
     .then(homeworldResponse => {
-      console.log(`Here is the homeworld => ${homeworldResponse}`);
       res.locals.homeworld = homeworldResponse;
       return next();
     })
@@ -98,27 +93,32 @@ starWarsController.getHomeWorld = (req, res, next) => {
 starWarsController.getFilms = (req, res, next) => {
   //use the request's body property to access the 'film's property value
   const { films } = req.body.character;
-  //send a GET request to the url returned from accessing 'film' property on request body
-  console.log(films, 'BBB');
+  //create an array to store all fetch Promises
+  const filmArray = [];
+  //iterate over the 'films' array of urls
   films.forEach(filmUrl => {
-    fetch(films)
-      .then(filmsJSON => filmsJSON.json())
-      .then(filmsResponse => {
-        console.log(filmsResponse, 'AAA');
-        //store response from GET request inside res.locals.films
-        res.locals.films = filmsResponse;
-        return next();
-      })
-      //error handle for GET request
-      .catch(error => {
-        console.log('poo');
-        const errorObj = {
-          log: `starWarsController.getFilms: ${error.message}`,
-          message: { err: 'starWarsController.getFilms: ERROR: Check server logs for details' }
-        };
-        return next(errorObj);
-      });
-  })
+    //create a variable to store the Promise returned from each fetch => then convert the JSON into JS
+    const filmFetch = fetch(filmUrl).then(filmResponse => filmResponse.json());
+    //push that Promise into the filmArray of Promises
+    filmArray.push(filmFetch);
+  });
+  //use Promise.all to attempt to resolve those errors at once
+  Promise.all(filmArray)
+    .then(promiseFilms => {
+      //add the array of films to res.locals at the property of 'films;
+      res.locals.films = promiseFilms;
+      return next();
+    })
+    //if any Promise is unsuccessfully resolved, error handle
+    .catch(error => {
+      //create error object to be passed to global error handler
+      const errorObj = {
+      log: `starWarsController.getFilms: ERROR: ${typeof error === 'object' ? JSON.stringify(error) : error}`,
+      message: { err: 'starWarsController.getFilms: ERROR: Check server logs for details' },
+    };
+    //invoke next with the errorObj to pass it to the global error handler
+    return next(errorObj);
+  });
 };
 
 module.exports = starWarsController;

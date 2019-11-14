@@ -22,7 +22,6 @@ router.post('/details', validateRequestCharacter, getHomeWorld, getFilms, (req, 
     homeworld: homeworld,
     films: films
   };
-  console.log(`Here is the response object to 'Get More Info' request => ${homeWorldAndFilms}`);
   res.status(200).json(homeWorldAndFilms);
 });
 

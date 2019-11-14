@@ -42,7 +42,6 @@ fileController.getFavs = (req, res, next) => {
 // ADD MIDDLEWARE TO ADD A FAVORITE CHARACTER HERE
 fileController.addFav = (req, res, next) => {
   //ensure that the res.locals has a property named 'favs' and that it is assigned to an object
-  // console.log(res.locals.hasOwnProperty('favs'));
   if (res.locals.favs === undefined || typeof res.locals.favs !== 'object') {
     //if either are untrue, invoke error handler function
     const errorObj = {
