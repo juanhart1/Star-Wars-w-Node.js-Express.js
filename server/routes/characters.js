@@ -17,11 +17,7 @@ router.get('/', getMoreCharacters, populateCharacterPhotos, (req, res, next) => 
 
 // ADD GET CHARACTER DETAILS ROUTE HANDLER HERE
 router.post('/details', validateRequestCharacter, getHomeWorld, getFilms, (req, res, next) => {
-  const { homeworld, films } = res.locals;
-  const homeWorldAndFilms = {
-    homeworld: homeworld,
-    films: films
-  };
+  const homeWorldAndFilms = res.locals;
   res.status(200).json(homeWorldAndFilms);
 });
 

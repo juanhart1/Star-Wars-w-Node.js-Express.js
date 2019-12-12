@@ -41,7 +41,7 @@ starWarsController.populateCharacterPhotos = (req, res, next) => {
     return next(errorObj);
   }
   //if it does, proceed
-  const newCharacters = res.locals.newCharacters;
+  const { newCharacters } = res.locals;
   //iterate over array of character objects
   newCharacters.forEach(character => {
     const { name } = character;
@@ -73,8 +73,11 @@ starWarsController.validateRequestCharacter = (req, res, next) => {
 starWarsController.getHomeWorld = (req, res, next) => {
   //use the request body to access the 'homeworld' property, which is a url, to send a request and store the results in res.locals.homeworld
   const { homeworld } = req.body.character;
+  //send fetch request to homeworld url
   fetch(homeworld)
+    //convert request from JSON to JS
     .then(homeworldJSON => homeworldJSON.json())
+    //assign the JS response to the res.locals object at a property of 'homeworld' and a value of the response received from the fetch
     .then(homeworldResponse => {
       res.locals.homeworld = homeworldResponse;
       return next();
